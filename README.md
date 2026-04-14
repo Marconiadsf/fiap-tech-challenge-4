@@ -107,7 +107,7 @@ streamlit run app/app.py
 
 - **App Streamlit:** _em breve_
 - **Dashboard:** _em breve_
-- **Repositório:** [github.com/<usuario>/tc4-obesity-predictor]()
+- **Repositório:** [github.com/Marconiadsf/fiap-tech-challenge-4](https://github.com/Marconiadsf/fiap-tech-challenge-4)
 
 ---
 
