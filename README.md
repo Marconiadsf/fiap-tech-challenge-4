@@ -107,8 +107,8 @@ streamlit run app/app.py
 
 ## 🔗 Links
 
-- **App Streamlit:** _em breve_
-- **Dashboard:** _em breve_
+- **App Streamlit:** [fiap-tech-challenge-4-obesity-predictor.streamlit.app](https://fiap-tech-challenge-4-obesity-predictor.streamlit.app/)
+- **Dashboard:** [fiap-tech-challenge-4-obesity-predictor.streamlit.app/Dashboard](https://fiap-tech-challenge-4-obesity-predictor.streamlit.app/Dashboard)
 - **Repositório:** [github.com/Marconiadsf/fiap-tech-challenge-4](https://github.com/Marconiadsf/fiap-tech-challenge-4)
 
 ---
