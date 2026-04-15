@@ -108,7 +108,7 @@ with col_left:
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, height=320,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 with col_right:
     st.subheader("Proporção das Classes")
@@ -120,7 +120,7 @@ with col_right:
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=320,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ── Linha 2: Histórico familiar | Atividade física ────────────────────────────
 st.markdown("---")
@@ -146,7 +146,7 @@ with col_a:
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, yaxis_title="%", height=350, legend_title="Histórico familiar",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 with col_b:
     st.subheader("🏃 Atividade Física (FAF) × Nível de Obesidade")
@@ -161,7 +161,7 @@ with col_b:
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, height=350,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ── Linha 3: Transporte | Comida calórica ─────────────────────────────────────
 st.markdown("---")
@@ -182,7 +182,7 @@ with col_c:
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font_color="#e2e8f0", xaxis_tickangle=-30, height=380,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 with col_d:
     st.subheader("🍔 Alimentos Calóricos (FAVC) × Nível de Obesidade")
@@ -202,7 +202,7 @@ with col_d:
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, yaxis_title="%", height=380,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 # ── Linha 4: Feature Importance ───────────────────────────────────────────────
 st.markdown("---")
@@ -236,7 +236,7 @@ try:
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             font_color="#e2e8f0", height=450, showlegend=False,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         st.caption(f"Modelo: {model_name} · Acurácia no teste: {acc*100:.1f}% · Trained without Weight/Height (leakage-free)")
 except Exception as e:
     st.warning(f"Feature importance não disponível: {e}")

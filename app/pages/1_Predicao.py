@@ -160,7 +160,7 @@ if submitted:
             height=320,
         )
         fig.update_xaxes(range=[0, 100])
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Interpretação clínica
     st.markdown("---")
