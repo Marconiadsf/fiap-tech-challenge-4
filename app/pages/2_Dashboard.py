@@ -242,4 +242,4 @@ except Exception as e:
     st.warning(f"Feature importance não disponível: {e}")
 
 st.markdown("---")
-st.caption("Fonte: Dataset de Estimativa de Obesidade — UCI ML Repository · Processado pelo Tech Challenge Fase 4 POSTECH/FIAP")
+st.caption("Fonte: [Dataset de Estimativa de Obesidade — UCI ML Repository](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition) · Disponibilizado pelo Tech Challenge Fase 4 POSTECH/FIAP")

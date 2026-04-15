@@ -10,7 +10,7 @@ Um hospital contratou um cientista de dados para desenvolver um modelo de Machin
 
 **Problema:** Classificação multiclasse — prever o nível de obesidade de um paciente entre 7 categorias possíveis.
 
-**Dataset:** `obesity.csv` — 2.111 registros, 14 features (após remoção de Weight/Height), 7 classes balanceadas.
+**Dataset:** [`obesity.csv`](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition) — 2.111 registros, 14 features (após remoção de Weight/Height), 7 classes balanceadas. Fonte: UCI ML Repository (disponibilizado pela POSTECH/FIAP com colunas renomeadas).
 
 > **Nota sobre Data Leakage:** Para garantir um modelo com valor clínico real, as variáveis de Peso (Weight) e Altura (Height) foram removidas das features de treinamento, pois o label de Obesidade é derivado diretamente do IMC (Peso/Altura²). O modelo foca em **hábitos de vida**.
 
