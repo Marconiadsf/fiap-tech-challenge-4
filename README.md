@@ -10,7 +10,9 @@ Um hospital contratou um cientista de dados para desenvolver um modelo de Machin
 
 **Problema:** Classificação multiclasse — prever o nível de obesidade de um paciente entre 7 categorias possíveis.
 
-**Dataset:** `obesity.csv` — 2.111 registros, 16 features, 7 classes balanceadas (~13–17% cada).
+**Dataset:** `obesity.csv` — 2.111 registros, 14 features (após remoção de Weight/Height), 7 classes balanceadas.
+
+> **Nota sobre Data Leakage:** Para garantir um modelo com valor clínico real, as variáveis de Peso (Weight) e Altura (Height) foram removidas das features de treinamento, pois o label de Obesidade é derivado diretamente do IMC (Peso/Altura²). O modelo foca em **hábitos de vida**.
 
 ---
 
@@ -18,8 +20,8 @@ Um hospital contratou um cientista de dados para desenvolver um modelo de Machin
 
 - [x] Pipeline de Machine Learning com feature engineering e treinamento
 - [x] Modelo com acurácia > 75%
-- [ ] App preditivo em Streamlit (deploy)
-- [ ] Dashboard analítico com insights para equipe médica
+- [x] App preditivo em Streamlit (Concluído)
+- [x] Dashboard analítico com insights para equipe médica (Concluído)
 - [ ] Vídeo de apresentação (4–10 min)
 
 ---
@@ -63,8 +65,8 @@ tc4-obesity-predictor/
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/<usuario>/tc4-obesity-predictor.git
-cd tc4-obesity-predictor
+git clone https://github.com/Marconiadsf/fiap-tech-challenge-4.git
+cd fiap-tech-challenge-4
 
 # 2. Crie o ambiente virtual
 python3 -m venv .venv
