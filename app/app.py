@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Obesity Predictor | Tech Challenge 4",
+    page_title="Preditoor de Tendência a Obesidade | Tech Challenge 4",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded",
