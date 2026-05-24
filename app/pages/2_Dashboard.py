@@ -36,7 +36,7 @@ feature_names = st.session_state["feature_names"]
 n_samples     = st.session_state["n_samples"]
 
 # ── Dados para o dashboard ────────────────────────────────────────────────────
-DATA_PATH = Path(__file__).parent.parent / "data" / "obesity.csv"
+DATA_PATH = Path(__file__).parent.parent.parent / "data" / "obesity.csv"
 
 @st.cache_data
 def load_data():
