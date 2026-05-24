@@ -33,7 +33,8 @@ st.markdown("""
 # O modelo é armazenado em st.session_state para ficar disponível
 # em todas as páginas sem precisar ser recarregado a cada navegação.
 
-MODEL_PATH = Path(__file__).parent / "model" / "model_pipeline.pkl"
+
+MODEL_PATH = Path(__file__).parent.parent / "model" / "model_pipeline.pkl"
 
 @st.cache_resource
 def load_artifacts():
