@@ -1,7 +1,9 @@
 import streamlit as st
+import joblib
+from pathlib import Path
 
 st.set_page_config(
-    page_title="Preditoor de Tendência a Obesidade | Tech Challenge 4",
+    page_title="Obesity Predictor | Tech Challenge 4",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -24,58 +26,85 @@ st.markdown("""
     }
     .card-title {color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;}
     .card-value {color: #f1f5f9; font-size: 1.8rem; font-weight: 700;}
-    .badge {
-        display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px;
-        font-size: 0.8rem; font-weight: 600;
-    }
-    .badge-green {background: #064e3b; color: #34d399;}
-    .badge-blue  {background: #1e3a5f; color: #60a5fa;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">🏥 Obesity Predictor</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Sistema preditivo de risco de obesidade baseado em hábitos de vida — Tech Challenge Fase 4 · POSTECH/FIAP</p>', unsafe_allow_html=True)
+# ── Carregamento do modelo — ocorre uma vez ao iniciar a aplicação ─────────────
+# O modelo é armazenado em st.session_state para ficar disponível
+# em todas as páginas sem precisar ser recarregado a cada navegação.
 
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.markdown("""<div class="card">
-        <div class="card-title">Pacientes analisados</div>
-        <div class="card-value">2.087</div>
-    </div>""", unsafe_allow_html=True)
-with col2:
-    st.markdown("""<div class="card">
-        <div class="card-title">Acurácia do modelo</div>
-        <div class="card-value">78,7%</div>
-    </div>""", unsafe_allow_html=True)
-with col3:
-    st.markdown("""<div class="card">
-        <div class="card-title">Classes previstas</div>
-        <div class="card-value">7</div>
-    </div>""", unsafe_allow_html=True)
-with col4:
-    st.markdown("""<div class="card">
-        <div class="card-title">Modelo</div>
-        <div class="card-value" style="font-size:1.2rem;">XGBoost</div>
-    </div>""", unsafe_allow_html=True)
+MODEL_PATH = Path(__file__).parent / "model" / "model_pipeline.pkl"
+
+@st.cache_resource
+def load_artifacts():
+    return joblib.load(MODEL_PATH)
+
+try:
+    artifacts = load_artifacts()
+    st.session_state["artifacts"] = artifacts
+except FileNotFoundError:
+    st.error("⚠️ model_pipeline.pkl não encontrado. Execute o notebook de treinamento primeiro.")
+    st.stop()
+
+# Atalhos diretos para as páginas usarem sem repetir a lógica de extração
+st.session_state["pipeline"]       = artifacts["pipeline"]
+st.session_state["label_encoder"]  = artifacts["label_encoder"]
+st.session_state["target_classes"] = artifacts["target_classes"]
+st.session_state["model_name"]     = artifacts.get("model_name", "Random Forest")
+st.session_state["accuracy"]       = artifacts.get("accuracy_test", 0.0)
+st.session_state["feature_names"]  = artifacts.get("feature_names", [])
+st.session_state["n_samples"]      = artifacts.get("n_samples", 0)
+
+# ── Header ─────────────────────────────────────────────────────────────────────
+st.markdown('<p class="main-title">🏥 Obesity Predictor</p>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="subtitle">Sistema preditivo de risco de obesidade baseado em hábitos de vida '
+    '— Tech Challenge Fase 4 · POSTECH/FIAP</p>',
+    unsafe_allow_html=True
+)
+
+# ── KPIs — lidos do pkl, sem hardcode ─────────────────────────────────────────
+c1, c2, c3, c4 = st.columns(4)
+
+kpis = [
+    ("Pacientes analisados", f"{st.session_state['n_samples']:,}".replace(",", ".")),
+    ("Acurácia do modelo",   f"{st.session_state['accuracy']*100:.1f}%"),
+    ("Classes previstas",    "7"),
+    ("Modelo",               st.session_state["model_name"]),
+]
+
+for col, (title, value) in zip([c1, c2, c3, c4], kpis):
+    with col:
+        st.markdown(f"""<div class="card">
+            <div class="card-title">{title}</div>
+            <div class="card-value">{value}</div>
+        </div>""", unsafe_allow_html=True)
 
 st.markdown("---")
 
 col_a, col_b = st.columns(2)
+
 with col_a:
     st.markdown("### 🔮 Predição de Risco")
-    st.write("Insira os hábitos de vida do paciente e obtenha uma previsão do nível de obesidade com probabilidades por classe.")
+    st.write(
+        "Insira os hábitos de vida do paciente e obtenha uma previsão "
+        "do nível de obesidade com probabilidades por classe."
+    )
     st.page_link("pages/1_Predicao.py", label="Ir para Predição →", icon="🔮")
 
 with col_b:
     st.markdown("### 📊 Dashboard Analítico")
-    st.write("Explore insights sobre a distribuição de obesidade, padrões de hábitos e os fatores mais relevantes para o modelo.")
+    st.write(
+        "Explore insights sobre a distribuição de obesidade, padrões de hábitos "
+        "e os fatores mais relevantes para o modelo."
+    )
     st.page_link("pages/2_Dashboard.py", label="Ir para Dashboard →", icon="📊")
 
 st.markdown("---")
 st.markdown("""
 <div style="color:#475569; font-size:0.85rem;">
-⚠️ <strong>Nota metodológica:</strong> Este modelo foi treinado <strong>sem Peso e Altura</strong> para evitar data leakage
-— o label de obesidade é matematicamente derivado do BMI (Peso/Altura²).
+⚠️ <strong>Nota metodológica:</strong> Este modelo foi treinado <strong>sem Peso e Altura</strong>
+para evitar data leakage — o label de obesidade é matematicamente derivado do BMI (Peso/Altura²).
 O modelo aprende padrões genuínos de hábitos de vida, com valor prático para triagem clínica.
 </div>
 """, unsafe_allow_html=True)
