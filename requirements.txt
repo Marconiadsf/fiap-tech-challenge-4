@@ -4,7 +4,7 @@ matplotlib-inline==0.2.1
 numpy==2.4.4
 pandas==3.0.2
 plotly==6.6.0
-scikit-learn==1.8.0
+scikit-learn==1.6.1
 seaborn==0.13.2
 streamlit==1.56.0
 xgboost==3.2.0
