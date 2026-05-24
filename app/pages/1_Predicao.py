@@ -1,14 +1,13 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
 import plotly.express as px
-import plotly.graph_objects as go
-from pathlib import Path
 
-st.set_page_config(page_title="Predição | Obesity Predictor", page_icon="🔮", layout="wide")
+st.set_page_config(
+    page_title="Predição | Obesity Predictor",
+    page_icon="🔮",
+    layout="wide"
+)
 
-# ── CSS ────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
     [data-testid="stSidebar"] {background: #0f172a;}
@@ -22,23 +21,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Carregar modelo ────────────────────────────────────────────────────────────
-MODEL_PATH = Path(__file__).parent.parent / "model" / "model_pipeline.pkl"
-
-@st.cache_resource
-def load_model():
-    return joblib.load(MODEL_PATH)
-
-try:
-    artifacts = load_model()
-    pipeline  = artifacts["pipeline"]
-    le        = artifacts["label_encoder"]
-    classes   = artifacts["target_classes"]
-except FileNotFoundError:
-    st.error("⚠️ Modelo não encontrado. Execute o notebook de treinamento primeiro.")
+# ── Modelo carregado pelo app.py e disponível via session_state ───────────────
+# Garante que mesmo que o usuário acesse esta página diretamente (sem passar
+# pela página inicial), o modelo estará disponível — desde que a sessão exista.
+if "pipeline" not in st.session_state:
+    st.error("⚠️ Sessão expirada ou modelo não carregado. Volte à página inicial.")
+    st.page_link("app.py", label="← Voltar ao início")
     st.stop()
 
-# ── Cores por classe ───────────────────────────────────────────────────────────
+pipeline = st.session_state["pipeline"]
+le       = st.session_state["label_encoder"]
+
 CLASS_COLORS = {
     "Insufficient_Weight": "#06b6d4",
     "Normal_Weight":        "#22c55e",
@@ -68,7 +61,7 @@ with st.form("prediction_form"):
     st.markdown("### 👤 Dados pessoais")
     c1, c2, c3 = st.columns(3)
     with c1:
-        gender = st.selectbox("Sexo", ["Male", "Female"], help="Sexo biológico do paciente")
+        gender = st.selectbox("Sexo", ["Male", "Female"])
     with c2:
         age = st.number_input("Idade", min_value=10, max_value=80, value=25, step=1)
     with c3:
@@ -108,8 +101,10 @@ with st.form("prediction_form"):
     with c13:
         scc = st.selectbox("Monitora as calorias? (SCC)", ["no", "yes"])
     with c14:
-        mtrans = st.selectbox("Meio de transporte habitual (MTRANS)",
-                              ["Public_Transportation", "Walking", "Automobile", "Motorbike", "Bike"])
+        mtrans = st.selectbox(
+            "Meio de transporte habitual (MTRANS)",
+            ["Public_Transportation", "Walking", "Automobile", "Motorbike", "Bike"]
+        )
 
     submitted = st.form_submit_button("🔍 Analisar Paciente", use_container_width=True, type="primary")
 
@@ -121,8 +116,9 @@ if submitted:
         "SMOKE": smoke, "SCC": scc, "CAEC": caec, "CALC": calc, "MTRANS": mtrans,
     }])
 
-    pred_enc  = pipeline.predict(input_data)[0]
-    pred_prob = pipeline.predict_proba(input_data)[0]
+    # A pipeline já inclui o preprocessor — passa o DataFrame com as colunas originais
+    pred_enc   = pipeline.predict(input_data)[0]
+    pred_prob  = pipeline.predict_proba(input_data)[0]
     pred_class = le.inverse_transform([pred_enc])[0]
 
     st.markdown("---")
@@ -131,8 +127,8 @@ if submitted:
     col_res, col_prob = st.columns([1, 2])
 
     with col_res:
-        color = CLASS_COLORS.get(pred_class, "#6366f1")
-        label = CLASS_LABELS.get(pred_class, pred_class)
+        color      = CLASS_COLORS.get(pred_class, "#6366f1")
+        label      = CLASS_LABELS.get(pred_class, pred_class)
         confidence = pred_prob[pred_enc] * 100
         st.markdown(f"""
         <div class="pred-badge" style="background:{color}22; border:2px solid {color}; color:{color};">
@@ -143,7 +139,7 @@ if submitted:
 
     with col_prob:
         prob_df = pd.DataFrame({
-            "Classe": le.classes_,
+            "Classe":            le.classes_,
             "Probabilidade (%)": pred_prob * 100
         }).sort_values("Probabilidade (%)", ascending=True)
 
@@ -156,13 +152,12 @@ if submitted:
         fig.update_layout(
             showlegend=False, paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
-            yaxis_title="", xaxis_title="Probabilidade (%)",
-            height=320,
+            yaxis_title="", xaxis_title="Probabilidade (%)", height=320,
         )
         fig.update_xaxes(range=[0, 100])
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Interpretação clínica
+    # ── Fatores de risco ───────────────────────────────────────────────────────
     st.markdown("---")
     st.markdown("### 💡 Fatores de risco identificados no perfil")
 

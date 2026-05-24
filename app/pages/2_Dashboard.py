@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 
-st.set_page_config(page_title="Dashboard | Obesity Predictor", page_icon="📊", layout="wide")
+st.set_page_config(
+    page_title="Dashboard | Obesity Predictor",
+    page_icon="📊",
+    layout="wide"
+)
 
 st.markdown("""
 <style>
@@ -21,32 +23,29 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
-BASE      = Path(__file__).parent.parent.parent
-DATA_PATH = BASE / "data" / "obesity.csv"
-MODEL_PATH = BASE / "model" / "model_pipeline.pkl"
+# ── Modelo carregado pelo app.py e disponível via session_state ───────────────
+if "pipeline" not in st.session_state:
+    st.error("⚠️ Sessão expirada ou modelo não carregado. Volte à página inicial.")
+    st.page_link("app.py", label="← Voltar ao início")
+    st.stop()
 
-# ── Carregar dados e modelo ────────────────────────────────────────────────────
+pipeline      = st.session_state["pipeline"]
+model_name    = st.session_state["model_name"]
+acc           = st.session_state["accuracy"]
+feature_names = st.session_state["feature_names"]
+n_samples     = st.session_state["n_samples"]
+
+# ── Dados para o dashboard ────────────────────────────────────────────────────
+DATA_PATH = Path(__file__).parent.parent / "data" / "obesity.csv"
+
 @st.cache_data
 def load_data():
     df = pd.read_csv(DATA_PATH)
-    df = df.drop_duplicates().drop(columns=["Weight", "Height"]).reset_index(drop=True)
-    ordinal_cols = ["FCVC", "NCP", "CH2O", "FAF", "TUE"]
-    df[ordinal_cols] = df[ordinal_cols].round(0).astype(int)
+    # Sem drop_duplicates — consistente com o notebook
+    df = df.drop(columns=["Weight", "Height"])
     return df
 
-@st.cache_resource
-def load_model():
-    return joblib.load(MODEL_PATH)
-
 df = load_data()
-
-try:
-    artifacts = load_model()
-    model_name = artifacts.get("model_name", "XGBoost")
-    acc        = artifacts.get("accuracy_test", 0.787)
-except Exception:
-    model_name, acc = "XGBoost", 0.787
 
 TARGET_ORDER = [
     "Insufficient_Weight", "Normal_Weight",
@@ -68,18 +67,17 @@ st.title("📊 Dashboard Analítico — Padrões de Obesidade")
 st.markdown("Insights sobre a distribuição e os fatores associados ao nível de obesidade no dataset.")
 st.markdown("---")
 
-# ── KPIs ───────────────────────────────────────────────────────────────────────
-obese_pct = df["Obesity"].isin(["Obesity_Type_I", "Obesity_Type_II", "Obesity_Type_III"]).mean() * 100
+# ── KPIs — lidos do session_state, sem hardcode ───────────────────────────────
+obese_pct  = df["Obesity"].isin(["Obesity_Type_I", "Obesity_Type_II", "Obesity_Type_III"]).mean() * 100
 overw_pct  = df["Obesity"].isin(["Overweight_Level_I", "Overweight_Level_II"]).mean() * 100
 normal_pct = (df["Obesity"] == "Normal_Weight").mean() * 100
-fh_pct     = (df["family_history"] == "yes").mean() * 100
 
 c1, c2, c3, c4, c5 = st.columns(5)
 metrics = [
-    ("Pacientes", f"{len(df):,}"),
-    ("Obesos", f"{obese_pct:.1f}%"),
-    ("Sobrepeso", f"{overw_pct:.1f}%"),
-    ("Peso Normal", f"{normal_pct:.1f}%"),
+    ("Pacientes",              f"{n_samples:,}".replace(",", ".")),
+    ("Obesos",                 f"{obese_pct:.1f}%"),
+    ("Sobrepeso",              f"{overw_pct:.1f}%"),
+    ("Peso Normal",            f"{normal_pct:.1f}%"),
     (f"Acurácia ({model_name})", f"{acc*100:.1f}%"),
 ]
 for col, (label, value) in zip([c1, c2, c3, c4, c5], metrics):
@@ -91,16 +89,15 @@ for col, (label, value) in zip([c1, c2, c3, c4, c5], metrics):
 
 st.markdown("---")
 
-# ── Linha 1: Distribuição do target | Pizza ───────────────────────────────────
+# ── Distribuição do target ────────────────────────────────────────────────────
 col_left, col_right = st.columns(2)
+counts = df["Obesity"].value_counts().reindex(TARGET_ORDER)
 
 with col_left:
     st.subheader("Distribuição por Nível de Obesidade")
-    counts = df["Obesity"].value_counts().reindex(TARGET_ORDER)
     fig = px.bar(
         x=counts.index, y=counts.values,
-        color=counts.index,
-        color_discrete_map=CLASS_COLORS,
+        color=counts.index, color_discrete_map=CLASS_COLORS,
         labels={"x": "", "y": "Pacientes", "color": "Nível"},
     )
     fig.update_layout(
@@ -108,45 +105,40 @@ with col_left:
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, height=320,
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 with col_right:
     st.subheader("Proporção das Classes")
     fig = px.pie(
         names=counts.index, values=counts.values,
-        color=counts.index, color_discrete_map=CLASS_COLORS,
-        hole=0.45,
+        color=counts.index, color_discrete_map=CLASS_COLORS, hole=0.45,
     )
-    fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=320,
-    )
-    st.plotly_chart(fig, width="stretch")
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0", height=320)
+    st.plotly_chart(fig, use_container_width=True)
 
-# ── Linha 2: Histórico familiar | Atividade física ────────────────────────────
+# ── Histórico familiar | Atividade física ─────────────────────────────────────
 st.markdown("---")
 col_a, col_b = st.columns(2)
 
 with col_a:
     st.subheader("🧬 Histórico Familiar × Nível de Obesidade")
-    cross = pd.crosstab(df["Obesity"], df["family_history"])
-    cross = cross.reindex(TARGET_ORDER)
+    cross     = pd.crosstab(df["Obesity"], df["family_history"]).reindex(TARGET_ORDER)
     cross_pct = cross.div(cross.sum(axis=1), axis=0) * 100
-
     fig = go.Figure()
-    colors_fh = {"yes": "#ef4444", "no": "#22c55e"}
-    for col_ in ["yes", "no"]:
+    for col_, color in [("yes", "#ef4444"), ("no", "#22c55e")]:
         if col_ in cross_pct.columns:
             fig.add_trace(go.Bar(
                 name="Histórico: " + col_,
                 x=cross_pct.index, y=cross_pct[col_],
-                marker_color=colors_fh[col_],
+                marker_color=color,
             ))
     fig.update_layout(
         barmode="stack", paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
-        xaxis_tickangle=-30, yaxis_title="%", height=350, legend_title="Histórico familiar",
+        xaxis_tickangle=-30, yaxis_title="%", height=350,
+        legend_title="Histórico familiar",
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 with col_b:
     st.subheader("🏃 Atividade Física (FAF) × Nível de Obesidade")
@@ -161,15 +153,15 @@ with col_b:
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, height=350,
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
-# ── Linha 3: Transporte | Comida calórica ─────────────────────────────────────
+# ── Transporte | Comida calórica ──────────────────────────────────────────────
 st.markdown("---")
 col_c, col_d = st.columns(2)
 
 with col_c:
     st.subheader("🚗 Meio de Transporte × Nível de Obesidade")
-    cross_mt = pd.crosstab(df["Obesity"], df["MTRANS"]).reindex(TARGET_ORDER)
+    cross_mt     = pd.crosstab(df["Obesity"], df["MTRANS"]).reindex(TARGET_ORDER)
     cross_mt_pct = cross_mt.div(cross_mt.sum(axis=1), axis=0) * 100
     fig = px.bar(
         cross_mt_pct.reset_index().melt(id_vars="Obesity"),
@@ -182,51 +174,52 @@ with col_c:
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font_color="#e2e8f0", xaxis_tickangle=-30, height=380,
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 with col_d:
     st.subheader("🍔 Alimentos Calóricos (FAVC) × Nível de Obesidade")
-    cross_fv = pd.crosstab(df["Obesity"], df["FAVC"]).reindex(TARGET_ORDER)
+    cross_fv     = pd.crosstab(df["Obesity"], df["FAVC"]).reindex(TARGET_ORDER)
     cross_fv_pct = cross_fv.div(cross_fv.sum(axis=1), axis=0) * 100
-    colors_fv = {"yes": "#f97316", "no": "#22c55e"}
     fig = go.Figure()
-    for col_ in ["yes", "no"]:
+    for col_, color in [("yes", "#f97316"), ("no", "#22c55e")]:
         if col_ in cross_fv_pct.columns:
             fig.add_trace(go.Bar(
                 name="FAVC: " + col_,
                 x=cross_fv_pct.index, y=cross_fv_pct[col_],
-                marker_color=colors_fv[col_],
+                marker_color=color,
             ))
     fig.update_layout(
         barmode="stack", paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
         xaxis_tickangle=-30, yaxis_title="%", height=380,
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
-# ── Linha 4: Feature Importance ───────────────────────────────────────────────
+# ── Feature Importance ────────────────────────────────────────────────────────
 st.markdown("---")
 st.subheader("🔍 Importância das Features no Modelo")
 
 try:
-    pipe     = artifacts["pipeline"]
-    le       = artifacts.get("label_encoder")
-    features = artifacts.get("feature_names", [])
+    # Step names do notebook: "preprocessor" e "classifier"
+    preprocessor = pipeline.named_steps["preprocessor"]
+    classifier   = pipeline.named_steps["classifier"]
 
-    model_step = pipe.named_steps["model"]
-    ohe_feats  = (
-        pipe.named_steps["prep"]
-        .named_transformers_["ohe"]
-        .get_feature_names_out(["MTRANS"])
+    # Reconstrói os nomes de todas as features após o preprocessor
+    num_cols = pipeline.named_steps["preprocessor"].transformers_[0][2]
+    cat_cols = pipeline.named_steps["preprocessor"].transformers_[1][2]
+    ohe_feat_names = (
+        preprocessor.named_transformers_["cat"]
+        .get_feature_names_out(cat_cols)
         .tolist()
     )
-    numeric_cols = ["Age", "FCVC", "NCP", "CH2O", "FAF", "TUE"]
-    binary_cols  = ["Gender", "family_history", "FAVC", "SMOKE", "SCC"]
-    ordered_cols = ["CAEC", "CALC"]
-    all_feat_names = numeric_cols + binary_cols + ordered_cols + ohe_feats
+    all_feat_names = list(num_cols) + ohe_feat_names
 
-    if hasattr(model_step, "feature_importances_"):
-        imp = pd.Series(model_step.feature_importances_, index=all_feat_names).sort_values(ascending=True)
+    if hasattr(classifier, "feature_importances_"):
+        imp = pd.Series(
+            classifier.feature_importances_,
+            index=all_feat_names
+        ).sort_values(ascending=True).tail(15)
+
         fig = px.bar(
             x=imp.values, y=imp.index, orientation="h",
             labels={"x": "Importância", "y": "Feature"},
@@ -236,10 +229,19 @@ try:
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             font_color="#e2e8f0", height=450, showlegend=False,
         )
-        st.plotly_chart(fig, width="stretch")
-        st.caption(f"Modelo: {model_name} · Acurácia no teste: {acc*100:.1f}% · Trained without Weight/Height (leakage-free)")
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(
+            f"Modelo: {model_name} · "
+            f"Acurácia CV K=10: {acc*100:.1f}% · "
+            f"Treinado sem Weight/Height (leakage-free)"
+        )
+
 except Exception as e:
     st.warning(f"Feature importance não disponível: {e}")
 
 st.markdown("---")
-st.caption("Fonte: [Dataset de Estimativa de Obesidade — UCI ML Repository](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition) · Disponibilizado pelo Tech Challenge Fase 4 POSTECH/FIAP")
+st.caption(
+    "Fonte: [Dataset de Estimativa de Obesidade — UCI ML Repository]"
+    "(https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition)"
+    " · Tech Challenge Fase 4 POSTECH/FIAP"
+)
