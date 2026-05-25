@@ -95,16 +95,32 @@ counts = df["Obesity"].value_counts().reindex(TARGET_ORDER)
 
 with col_left:
     st.subheader("Distribuição por Nível de Obesidade")
+    
     fig = px.bar(
-        x=counts.index, y=counts.values,
-        color=counts.index, color_discrete_map=CLASS_COLORS,
+        x=counts.index,
+        y=counts.values,
+        color=counts.index,
+        color_discrete_map=CLASS_COLORS,
+        text=counts.values,
         labels={"x": "", "y": "Pacientes", "color": "Nível"},
     )
-    fig.update_layout(
-        showlegend=False, paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)", font_color="#e2e8f0",
-        xaxis_tickangle=-30, height=320,
+
+    fig.update_traces(
+        width=0.7,
+        textposition="outside"
     )
+
+    fig.update_layout(
+        showlegend=False,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#e2e8f0",
+        xaxis_tickangle=-30,
+        height=420,
+        bargap=0.18,
+        yaxis_title="Quantidade de pacientes",
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
 with col_right:
